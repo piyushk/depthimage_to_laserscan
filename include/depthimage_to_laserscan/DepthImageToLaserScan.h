@@ -103,6 +103,26 @@ namespace depthimage_to_laserscan
     void set_scan_height(const int scan_height);
     
     /**
+     * Sets the maximum height a point can have to be used in the output LaserScan.
+     * 
+     * This function can be used instead/along with scan_height to limit what points are compressed into the output laserscan. 
+     * 
+     * @param max_height Maximum height in meters for a point in the depth image to be compressed into the LaserScan.
+     * 
+     */
+    void set_max_height(const double max_height);
+    
+    /**
+     * Sets the number of image rows to use in the output LaserScan.
+     * 
+     * This function can be used instead/along with scan_height to limit what points are compressed into the output laserscan. 
+     * 
+     * @param min_height Minimum height in meters for a point in the depth image to be compressed into the LaserScan.
+     * 
+     */
+    void set_min_height(const double min_height);
+    
+    /**
      * Sets the frame_id for the output LaserScan.
      * 
      * Output frame_id for the LaserScan.  Will probably NOT be the same frame_id as the depth image.
@@ -168,7 +188,9 @@ namespace depthimage_to_laserscan
     */
     template<typename T>
     void convert(const sensor_msgs::ImageConstPtr& depth_msg, const image_geometry::PinholeCameraModel& cam_model, 
-		 const sensor_msgs::LaserScanPtr& scan_msg, const int& scan_height) const{
+		 const sensor_msgs::LaserScanPtr& scan_msg, const int& scan_height, 
+     double max_height = std::numeric_limits<double>::max(), 
+     double min_height = -std::numeric_limits<double>::max()) const{
       // Use correct principal point from calibration
       float center_x = cam_model.cx();
       float center_y = cam_model.cy();
@@ -200,7 +222,12 @@ namespace depthimage_to_laserscan
 	    double z = depthimage_to_laserscan::DepthTraits<T>::toMeters(depth);
 	    
 	    // Calculate actual distance
-	    r = sqrt(pow(x, 2.0) + pow(y, 2.0) + pow(z, 2.0));
+      if (y <= max_height && y >= min_height) {
+        r = sqrt(pow(x, 2.0) + pow(z, 2.0));
+      } else {
+        // Don't use this value
+        r = std::numeric_limits<double>::quiet_NaN(); 
+      }
 	  }
 	  
 	  // Determine if this point should be used.
@@ -217,6 +244,8 @@ namespace depthimage_to_laserscan
     float range_min_; ///< Stores the current minimum range to use.
     float range_max_; ///< Stores the current maximum range to use.
     int scan_height_; ///< Number of pixel rows to use when producing a laserscan from an area.
+    double max_height_; ///< Maximum height in the Y-Axis above which points should not be used
+    double min_height_; ///< Minimum height in the Y-Axis below which points should not be used
     std::string output_frame_id_; ///< Output frame_id for each laserscan.  This is likely NOT the camera's frame_id.
   };
   
