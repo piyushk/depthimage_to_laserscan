@@ -34,6 +34,7 @@
 #ifndef DEPTH_IMAGE_TO_LASERSCAN
 #define DEPTH_IMAGE_TO_LASERSCAN
 
+#include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/image_encodings.h>
@@ -218,7 +219,7 @@ namespace depthimage_to_laserscan
 	  if (depthimage_to_laserscan::DepthTraits<T>::valid(depth)){ // Not NaN or Inf
 	    // Calculate in XYZ
 	    double x = (u - center_x) * depth * constant_x;
-	    double y = (v - center_y) * depth * constant_y;
+	    double y = -(v - center_y) * depth * constant_y;
 	    double z = depthimage_to_laserscan::DepthTraits<T>::toMeters(depth);
 	    
 	    // Calculate actual distance
